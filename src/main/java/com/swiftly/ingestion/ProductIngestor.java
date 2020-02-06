@@ -4,23 +4,67 @@ import java.io.*;
 import java.math.*;
 import java.util.*;
 
-import com.swiftly.ingestor.model.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class ProductIngestor {
+import com.swiftly.ingestor.model.*;
     
+/**
+ * Ingests productions from a file of known format 'input.txt', spits out json objects constructed from the given data into a new file 'input_<timestamp>.txt'
+ */
+public class ProductIngestor {
+
+    // for json serialization
+    ObjectMapper objectMapper = new ObjectMapper();
+
+    /**
+     * Returns the name of the file storing the output
+     */
+    public String parseFile(String filename) throws Exception {
+        File file = new File(filename);
+        if (!file.exists()) {
+            throw new IngestionException(ErrorCode.FILE_NOT_FOUND, "File " + filename +  " was not found");
+        }
+        
+        String outputFileName = deriveOutputFilename(filename);
+
+        BufferedReader br = new BufferedReader(new FileReader(file));
+        BufferedWriter bw = new BufferedWriter(new FileWriter(new File(outputFileName)));
+        String line;
+
+        // serializing as a json array as we parse the input; print the begin/end array
+        bw.write("[\n");
+        int lineCtr = 0;
+        while ((line = br.readLine()) != null) {
+            // to make proper json
+            if (lineCtr > 0) {                
+                bw.write(",\n");
+            }
+            Product product = parseLine(line);
+            String s = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(product);
+            bw.write(s);
+            lineCtr++;
+        }
+
+        bw.write("]");
+        br.close();
+        bw.close();
+
+        return outputFileName;
+    }
+
 
     /**
      * parse a fixed-width string; separator is always 2 spaces. the field lengths are:
      * 7 58 7 7 7 7 7 7 8 8
      * at this time, the line has 10 records
-     * This can be extended to any additional fields fitting the same pattern
+     * This can be extended to any additional fields of various lengths
      */
     public Product parseLine(String line) {
         int delimLength = 2;
         int countOfFields = 10;
         int[] fieldLengths = {7, 58, 7, 7, 7, 7, 7, 7, 8, 8};
 
-        double id = parseDouble(line.substring(0, fieldLengths[0]+1));
+        int id = parseInt(line.substring(0, fieldLengths[0]+1));
         int cursor = fieldLengths[0]+delimLength;
         String descr = line.substring(cursor, cursor+58).trim();
         Product product = new Product(id, descr);
@@ -31,7 +75,6 @@ public class ProductIngestor {
         
         for (int i=2; i<countOfFields; i++) {
             String s = line.substring(cursor, cursor+fieldLengths[i]+1);
-            //System.out.println("PARSED: " + s + ", " + i);
 
             switch(i) {
             case 2:
@@ -103,9 +146,14 @@ public class ProductIngestor {
         return Double.parseDouble(input);
     }
 
-    // use a compare to account for decimal, eg. 0 vs 0.00
+    // use a compare to account for decimals, eg. 0 vs 0.00
     boolean isNot0(BigDecimal input) {
         return input.compareTo(BigDecimal.ZERO) != 0;
+    }
+
+    String deriveOutputFilename(String name) {
+        int lastIndexOf = name.lastIndexOf(".");
+        return name.substring(0, lastIndexOf) + "_" + System.currentTimeMillis() + name.substring(lastIndexOf);
     }
 
 }

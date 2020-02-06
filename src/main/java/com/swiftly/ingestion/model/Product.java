@@ -3,7 +3,7 @@ package com.swiftly.ingestor.model;
 import java.util.*;
 
 public class Product {
-    double id;
+    int id;
     String description;
     List<Price> prices = new ArrayList<Price>();
     char[] flags;
@@ -16,14 +16,13 @@ public class Product {
     static final char N = 'N';
     public static final String EACH = "Each";
     public static final String POUND = "Pound";
-    
-
-    public Product(double id, String description) {
+        
+    public Product(int id, String description) {
         this.id = id;
         this.description = description;        
     }
 
-    public double getId() { return this.id; }
+    public int getId() { return this.id; }
     public void setId(int id) { this.id = id; }
 
     public String getDescription() { return this.description; }

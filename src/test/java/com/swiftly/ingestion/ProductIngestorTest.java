@@ -1,8 +1,11 @@
 package com.swiftly.ingestor;
 
+import java.io.*;
 import java.math.*;
 import java.util.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.testng.annotations.Test;
+
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
@@ -92,6 +95,18 @@ public class ProductIngestorTest {
 
         input = pi.parseCurrency("0000555");
         assertTrue(pi.isNot0(input));
+    }
+
+    @Test
+    public void testParseFile() throws Exception {
+        String output = pi.parseFile("src/test/resources/input-sample.txt");
+        File file = new File(output);
+
+        ObjectMapper mapper = new ObjectMapper();
+        Object[] products = mapper.readValue(file, Object[].class);
+        assertEquals(products.length, 4);
+
+        // TODO: remove output file
     }
 
 }
