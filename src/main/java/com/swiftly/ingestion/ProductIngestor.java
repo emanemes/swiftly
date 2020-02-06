@@ -156,4 +156,18 @@ public class ProductIngestor {
         return name.substring(0, lastIndexOf) + "_" + System.currentTimeMillis() + name.substring(lastIndexOf);
     }
 
+    public static final void main(String[] args) {
+        if (args.length < 1) {
+            System.out.println("Usage is: ProductIngestor <data file>");
+            System.exit(0);
+        }
+
+        try {
+            ProductIngestor pi = new ProductIngestor();
+            System.out.println("OUTPUT LOCATED AT: " + pi.parseFile(args[0]));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 }
