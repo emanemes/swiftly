@@ -60,11 +60,11 @@ public class ProductIngestor {
      * This can be extended to any additional fields of various lengths
      */
     public Product parseLine(String line) {
-        int delimLength = 2;
+        int delimLength = 1;
         int countOfFields = 10;
-        int[] fieldLengths = {7, 58, 7, 7, 7, 7, 7, 7, 8, 8};
+        int[] fieldLengths = {8, 59, 8, 8, 8, 8, 8, 8, 9, 9};
 
-        int id = parseInt(line.substring(0, fieldLengths[0]+1));
+        int id = parseInt(line.substring(0, fieldLengths[0]));
         int cursor = fieldLengths[0]+delimLength;
         String descr = line.substring(cursor, cursor+58).trim();
         Product product = new Product(id, descr);
@@ -74,7 +74,7 @@ public class ProductIngestor {
         BigDecimal promoSplitPriceAmount = BigDecimal.ZERO;
         
         for (int i=2; i<countOfFields; i++) {
-            String s = line.substring(cursor, cursor+fieldLengths[i]+1);
+            String s = line.substring(cursor, cursor+fieldLengths[i]);
 
             switch(i) {
             case 2:
@@ -127,7 +127,7 @@ public class ProductIngestor {
                 // all cases ought to be covered                
             }                
             
-            cursor = cursor + fieldLengths[i] + delimLength; 
+            cursor = cursor + fieldLengths[i]+delimLength; 
         }
 
         return product;
