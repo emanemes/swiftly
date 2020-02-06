@@ -21,3 +21,4 @@ The command above prints out the name of the file containing the output.
 
 ## CI Environment
 https://travis-ci.com/emanemes/swiftly
+Build Status: https://travis-ci.com/emanemes/swiftly.svg?branch=master
