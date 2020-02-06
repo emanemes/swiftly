@@ -17,3 +17,7 @@ Other useful commands are:
 java -jar ingestor-1.0-jar-with-dependencies.jar <path to input file>.
 A test file is available under src/test/resources/input-sample.txt
 The command above prints out the name of the file containing the output.
+
+
+## CI Environment
+https://travis-ci.com/emanemes/swiftly
