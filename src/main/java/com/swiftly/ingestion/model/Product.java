@@ -5,17 +5,14 @@ import java.util.*;
 public class Product {
     int id;
     String description;
-    List<Price> prices = new ArrayList<Price>();
-    char[] flags;
-    boolean isPerWeight = false;
+    List<PriceContainer> prices = new ArrayList<PriceContainer>();
     boolean isTaxable = false;
+    boolean isPerWeight = false;
     // lb, oz, etc 
     String size = "";
 
-    static final char Y = 'Y';
-    static final char N = 'N';
-    public static final String EACH = "Each";
-    public static final String POUND = "Pound";
+    public static final String EACH = "each";
+    public static final String POUND = "pound";
         
     public Product(int id, String description) {
         this.id = id;
@@ -28,10 +25,10 @@ public class Product {
     public String getDescription() { return this.description; }
     public void setDescription(String description) { this.description = description; }
 
-    public void addPrice(Price price) {
+    public void addPrice(PriceContainer price) {
         prices.add(price);
     }
-    public List<Price> getPrices() { return this.prices; }
+    public List<PriceContainer> getPrices() { return this.prices; }
 
     public String getUnitOfMeasure() {
         if (isPerWeight) {
@@ -40,29 +37,13 @@ public class Product {
             return EACH;
         }
     }
-
-    public char[] getFlags() {
-        return this.flags;
-    }
-    public void setFlags(char[] flags) {
-        this.flags = flags;
-        // we are guaranteed 7 entries in the array, won't check
-        // If 3rd flag is set, this is a per-weight item
-        if (flags[2] == Y) {
-            isPerWeight = true;
-        }
-        // If 5th flag is set, the item is taxable
-        if (flags[4] == Y) {
-            isTaxable = true;
-        }
-
-        // TODO: one record in the sample input has a Y in the 1st position ?
-    }
     
     public String getSize() { return this.size; }
     public void setSize(String size) { this.size = size; }
 
     public boolean isTaxable() { return isTaxable; }
+    public void setIsTaxable(boolean isTaxable) { this.isTaxable = isTaxable; }
     public boolean isPerWeight() { return isPerWeight; }
+    public void setIsPerWeight(boolean isPerWeight) { this.isPerWeight = isPerWeight; }
 
 }

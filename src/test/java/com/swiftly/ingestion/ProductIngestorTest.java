@@ -28,10 +28,10 @@ public class ProductIngestorTest {
         assertEquals(product.getSize(), "18oz");
         assertEquals(product.getUnitOfMeasure(), Product.EACH);
 
-        List<Price> prices = product.getPrices();
+        List<PriceContainer> prices = product.getPrices();
         assertEquals(prices.size(), 1);
         assertEquals(prices.get(0).getType(), PriceType.REGULAR);
-        assertEquals(prices.get(0).getDisplayPrice(), "$5.67");
+        assertEquals(prices.get(0).getDisplayPrice(), "$5.67 each");
         assertEquals(prices.get(0).getCalculatorPrice(), new BigDecimal("5.6700"));
     }
 
@@ -40,15 +40,15 @@ public class ProductIngestorTest {
         Product product = pi.parseLine("14963801 Generic Soda 12-pack                                        00000000 00000549 00001300 00000000 00000002 00000000 NNNNYNNNN   12x12oz");
         assertEquals(product.getSize(), "12x12oz");
         assertTrue(product.isTaxable());
-        List<Price> prices = product.getPrices();
+        List<PriceContainer> prices = product.getPrices();
         assertEquals(prices.size(), 2);
 
-        Price promoPrice = prices.get(0);
+        PriceContainer promoPrice = prices.get(0);
         assertEquals(promoPrice.getType(), PriceType.PROMOTIONAL);
-        assertEquals(promoPrice.getDisplayPrice(), "$5.49");
+        assertEquals(promoPrice.getDisplayPrice(), "$5.49 each");
         assertEquals(promoPrice.getCalculatorPrice(), new BigDecimal("5.4900"));
 
-        Price splitPrice = (SplitPrice)prices.get(1);
+        PriceContainer splitPrice = (SplitPriceContainer)prices.get(1);
         assertEquals(splitPrice.getType(), PriceType.REGULAR);
         assertEquals(splitPrice.getDisplayPrice(), "$13.00 for 2");
         assertEquals(splitPrice.getCalculatorPrice(), new BigDecimal("6.5000"));
@@ -57,13 +57,13 @@ public class ProductIngestorTest {
     @Test
     public void testParseLinePromoAndSplitPriceNegative() throws Exception {
         Product product = pi.parseLine("14963801 Generic Soda 12-pack                                        00000000 -0000549 -0001300 00000000 00000002 00000000 NNNNYNNNN   12x12oz");
-        List<Price> prices = product.getPrices();
+        List<PriceContainer> prices = product.getPrices();
         assertEquals(prices.size(), 2);
         
-        Price promoPrice = prices.get(0);
-        assertEquals(promoPrice.getDisplayPrice(), "$-5.49");
+        PriceContainer promoPrice = prices.get(0);
+        assertEquals(promoPrice.getDisplayPrice(), "$-5.49 each");
         
-        Price splitPrice = (SplitPrice)prices.get(1);
+        PriceContainer splitPrice = (SplitPriceContainer)prices.get(1);
         assertEquals(splitPrice.getDisplayPrice(), "$-13.00 for 2");
         assertEquals(splitPrice.getCalculatorPrice(), new BigDecimal("-6.5000"));
     }
@@ -71,20 +71,19 @@ public class ProductIngestorTest {
 
     @Test
     public void testParseLineRegularAndPromoPrice() throws Exception {
-        // TODO: hmmm. there is a flag in first position, and not flagged as taxable, which seems wrong
         Product product = pi.parseLine("40123401 Marlboro Cigarettes                                         00001000 00000549 00000000 00000000 00000000 00000000 YNNNNNNNN          ");
         assertEquals(product.getSize(), "");
         
-        List<Price> prices = product.getPrices();
+        List<PriceContainer> prices = product.getPrices();
         assertEquals(prices.size(), 2);
 
-        Price regularPrice = prices.get(0);
+        PriceContainer regularPrice = prices.get(0);
         assertEquals(regularPrice.getType(), PriceType.REGULAR);
-        assertEquals(regularPrice.getDisplayPrice(), "$10.00");
+        assertEquals(regularPrice.getDisplayPrice(), "$10.00 each");
 
-        Price promoPrice = prices.get(1);
+        PriceContainer promoPrice = prices.get(1);
         assertEquals(promoPrice.getType(), PriceType.PROMOTIONAL);
-        assertEquals(promoPrice.getDisplayPrice(), "$5.49");
+        assertEquals(promoPrice.getDisplayPrice(), "$5.49 each");
     }
 
     @Test
@@ -93,9 +92,33 @@ public class ProductIngestorTest {
         assertEquals(product.getUnitOfMeasure(), Product.POUND);
         assertTrue(product.isPerWeight());
 
-        List<Price> prices = product.getPrices();
+        List<PriceContainer> prices = product.getPrices();
         assertEquals(prices.size(), 1);
-        // TODO: should the display price be '$3.49 per pound' rather than just '$3.49' ?
+        assertEquals(prices.get(0).getDisplayPrice(), "$3.49 per pound");
+    }
+
+    @Test
+    public void testParseLineByWeightWithSplit() throws Exception {
+        Product product = pi.parseLine("50133333 Fuji Apples (Organic)                                       00000349 00000000 00000600 00000000 00000002 00000000 NNYNNNNNN        lb");
+        assertEquals(product.getUnitOfMeasure(), Product.POUND);
+        assertTrue(product.isPerWeight());
+
+        List<PriceContainer> prices = product.getPrices();
+        assertEquals(prices.size(), 2);
+        assertTrue(prices.get(0).isPerWeight());
+        assertEquals(prices.get(0).getDisplayPrice(), "$3.49 per pound");
+        assertEquals(prices.get(1).getDisplayPrice(), "$6.00 for 2 pounds");
+    }
+
+    @Test(description = "ensure the underlying data (price) is not modified when using other types of prices (calculator, display)")
+    public void testSetScaleNoMods() throws Exception {
+        Product product = pi.parseLine("50133333 Fuji Apples (Organic)                                       00000349 00000000 00000000 00000000 00000000 00000000 NNYNNNNNN        lb");
+        PriceContainer price = product.getPrices().get(0);
+        BigDecimal a = price.getPrice();
+        BigDecimal b = price.getCalculatorPrice();
+        String c = price.getDisplayPrice();
+        BigDecimal d = price.getPrice();
+        assertEquals(a, d);
     }
 
     @Test

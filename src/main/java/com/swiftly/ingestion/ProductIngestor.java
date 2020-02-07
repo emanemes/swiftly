@@ -57,11 +57,10 @@ public class ProductIngestor {
      * parse a fixed-width string; separator is always 2 spaces. the field lengths are:
      * 7 58 7 7 7 7 7 7 8 8
      * at this time, the line has 10 records
-     * This can be extended to any additional fields of various lengths
+     * NOTE: if new fields need parsing, add their length to the fieldsLength array and process them in the switch bloc
      */
-    public Product parseLine(String line) {
+    public Product parseLine(String line) throws IngestionException {
         int delimLength = 1;
-        int countOfFields = 10;
         int[] fieldLengths = {8, 59, 8, 8, 8, 8, 8, 8, 9, 9};
 
         int id = parseInt(line.substring(0, fieldLengths[0]));
@@ -73,7 +72,7 @@ public class ProductIngestor {
         BigDecimal splitPriceAmount = BigDecimal.ZERO;
         BigDecimal promoSplitPriceAmount = BigDecimal.ZERO;
         
-        for (int i=2; i<countOfFields; i++) {
+        for (int i=2; i<fieldLengths.length; i++) {
             String s = line.substring(cursor, cursor+fieldLengths[i]);
 
             switch(i) {
@@ -81,14 +80,14 @@ public class ProductIngestor {
                 BigDecimal singularPriceAmount = parseCurrency(s);
                 // if it's not 0, we have a price
                 if (isNot0(singularPriceAmount)) {
-                    Price price = new Price(PriceType.REGULAR, singularPriceAmount);
+                    PriceContainer price = new PriceContainer(PriceType.REGULAR, singularPriceAmount);
                     product.addPrice(price);
                 }
                 break;
             case 3:
                 BigDecimal promoSingularPriceAmount = parseCurrency(s);
                 if (isNot0(promoSingularPriceAmount)) {
-                    Price promoPrice = new Price(PriceType.PROMOTIONAL, promoSingularPriceAmount);
+                    PriceContainer promoPrice = new PriceContainer(PriceType.PROMOTIONAL, promoSingularPriceAmount);
                     product.addPrice(promoPrice);
                 }
                 break;
@@ -102,7 +101,7 @@ public class ProductIngestor {
                 int quantityForPrice = parseInt(s);
                 // the splitPrice amount should have been set
                 if (isNot0(splitPriceAmount)) {
-                    SplitPrice splitPrice = new SplitPrice(PriceType.REGULAR, splitPriceAmount);
+                    SplitPriceContainer splitPrice = new SplitPriceContainer(PriceType.REGULAR, splitPriceAmount);
                     splitPrice.setQuantityForPrice(quantityForPrice);
                     product.addPrice(splitPrice);
                     splitPriceAmount = BigDecimal.ZERO; // reset for the next product with split price
@@ -111,20 +110,21 @@ public class ProductIngestor {
             case 7:
                 int promoQuantityForPrice = parseInt(s);
                 if (isNot0(promoSplitPriceAmount)) {
-                    SplitPrice promoSplitPrice = new SplitPrice(PriceType.PROMOTIONAL, promoSplitPriceAmount);
+                    SplitPriceContainer promoSplitPrice = new SplitPriceContainer(PriceType.PROMOTIONAL, promoSplitPriceAmount);
                     promoSplitPrice.setQuantityForPrice(promoQuantityForPrice);
                     product.addPrice(promoSplitPrice);
                     promoSplitPriceAmount = BigDecimal.ZERO; // reset for the next product with promo split price
                 }
                 break;
             case 8:
-                product.setFlags(s.toCharArray());
+                setFlags(product, s.toCharArray());
                 break;
             case 9:
                 product.setSize(s.trim());
                 break;
             default:
-                // all cases ought to be covered                
+                // all cases ought to be covered, but just in case we missed any
+                throw new IngestionException(ErrorCode.UNPROCESSED_FIELD, "One of the " + fieldLengths.length + " has not been processed");
             }                
             
             cursor = cursor + fieldLengths[i]+delimLength; 
@@ -154,6 +154,22 @@ public class ProductIngestor {
     String deriveOutputFilename(String name) {
         int lastIndexOf = name.lastIndexOf(".");
         return name.substring(0, lastIndexOf) + "_" + System.currentTimeMillis() + name.substring(lastIndexOf);
+    }
+
+    // NOTE: if new flags need parsing, tackle them here
+    void setFlags(Product product, char[] flags) {
+        // If 3rd flag is set, this is a per-weight item
+        if (flags[2] == 'Y') {
+            product.setIsPerWeight(true);
+            // inform prices as their display price needs this information
+            for (PriceContainer price : product.getPrices()) {
+                price.setIsPerWeight(true);
+            }
+        }
+        // If 5th flag is set, the item is taxable
+        if (flags[4] == 'Y') {
+            product.setIsTaxable(true);
+        }
     }
 
     public static final void main(String[] args) {
