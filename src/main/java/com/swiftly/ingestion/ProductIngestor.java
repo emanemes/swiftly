@@ -9,7 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.swiftly.ingestor.model.*;
     
 /**
- * Ingests productions from a file of known format 'input.txt', spits out json objects constructed from the given data into a new file 'input_<timestamp>.txt'
+ * Ingests products from a file of known format 'input.txt', spits out json objects constructed from the given data into a new file 'input_<timestamp>.txt'
  */
 public class ProductIngestor {
 
@@ -31,7 +31,7 @@ public class ProductIngestor {
         BufferedWriter bw = new BufferedWriter(new FileWriter(new File(outputFileName)));
         String line;
 
-        // serializing as a json array as we parse the input; print the begin/end array
+        // serializing as a json array as we parse the input
         bw.write("[\n");
         int lineCtr = 0;
         while ((line = br.readLine()) != null) {
@@ -54,9 +54,9 @@ public class ProductIngestor {
 
 
     /**
-     * parse a fixed-width string; separator is always 2 spaces. the field lengths are:
+     * Parse a fixed-width string; separator is always 1 space. The field lengths are:
      * 7 58 7 7 7 7 7 7 8 8
-     * at this time, the line has 10 records
+     * At this time, the line has 10 records
      * NOTE: if new fields need parsing, add their length to the fieldsLength array and process them in the switch bloc
      */
     public Product parseLine(String line) throws IngestionException {
